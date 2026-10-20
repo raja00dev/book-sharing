@@ -1,0 +1,13 @@
+<x-admin.layout section-title="افزودن ادمین" active-route="admin.admins.create" :sidebar-open="$sidebarOpen">
+    <section class="max-w-3xl rounded border border-[#e3eae2] bg-white p-5 sm:p-7" aria-labelledby="create-admin-title">
+        <div class="mb-6 border-b border-[#e3eae2] pb-5"><p class="text-xs font-bold text-[#d25e43]">دسترسی‌ها</p><h2 id="create-admin-title" class="mt-2 text-xl font-bold text-[#18342d]">حساب مدیر جدید</h2><p class="mt-2 text-sm text-[#718078]">رمز عبور حداقل ۸ کاراکتر است و به‌صورت hash ذخیره می‌شود.</p></div>
+        @if ($statusMessage)<p class="mb-5 border-r-[3px] border-[#438266] bg-[#edf7ef] px-4 py-3 text-sm text-[#245a48]" role="status">{{ $statusMessage }}</p>@endif
+        <form wire:submit="save" class="grid gap-4 sm:grid-cols-2">
+            <label class="text-sm font-semibold text-[#35574a]">نام مدیر<input id="admin-name" wire:model="name" class="mt-2 h-12 w-full rounded border border-[#dce5dd] px-3 font-normal text-[#18342d] outline-none focus:border-[#39836e]" type="text">@error('name')<span class="mt-1 block text-xs text-[#bd493e]">{{ $message }}</span>@enderror</label>
+            <label class="text-sm font-semibold text-[#35574a]">شماره موبایل<input wire:model="phone" class="mt-2 h-12 w-full rounded border border-[#dce5dd] px-3 text-left font-normal text-[#18342d] outline-none focus:border-[#39836e]" type="tel" inputmode="numeric" maxlength="11" dir="ltr" placeholder="09123456789">@error('phone')<span class="mt-1 block text-xs text-[#bd493e]">{{ $message }}</span>@enderror</label>
+            <label class="text-sm font-semibold text-[#35574a]">رمز عبور<input wire:model="password" class="mt-2 h-12 w-full rounded border border-[#dce5dd] px-3 text-left font-normal text-[#18342d] outline-none focus:border-[#39836e]" type="password" dir="ltr" autocomplete="new-password">@error('password')<span class="mt-1 block text-xs text-[#bd493e]">{{ $message }}</span>@enderror</label>
+            <label class="text-sm font-semibold text-[#35574a]">تکرار رمز عبور<input wire:model="passwordConfirmation" class="mt-2 h-12 w-full rounded border border-[#dce5dd] px-3 text-left font-normal text-[#18342d] outline-none focus:border-[#39836e]" type="password" dir="ltr" autocomplete="new-password">@error('passwordConfirmation')<span class="mt-1 block text-xs text-[#bd493e]">{{ $message }}</span>@enderror</label>
+            <button type="submit" wire:loading.attr="disabled" class="min-h-12 justify-self-start rounded bg-[#1d5547] px-5 py-3 text-sm font-bold text-white hover:bg-[#143f35] disabled:opacity-60 sm:col-span-2">ساخت حساب ادمین</button>
+        </form>
+    </section>
+</x-admin.layout>

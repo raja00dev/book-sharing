@@ -1,0 +1,16 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # جلوگیری از دسترسی مستقیم به فایل‌های حساس
+    RewriteRule (^|/)\. - [F,L]
+    RewriteRule ^(app|bootstrap|config|database|resources|routes|storage|vendor|tests|node_modules)(/|$) - [F,L,NC]
+
+    # فایل‌های استاتیک داخل public
+    RewriteCond %{DOCUMENT_ROOT}/public/$1 -f
+    RewriteRule ^(.+)$ public/$1 [L]
+
+    # درخواست‌های مربوط به Routeهای لاراول
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [L]
+</IfModule>

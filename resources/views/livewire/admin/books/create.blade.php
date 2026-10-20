@@ -1,0 +1,26 @@
+<x-admin.layout section-title="افزودن کتاب" active-route="admin.books.create" :sidebar-open="$sidebarOpen">
+    <section class="max-w-4xl rounded border border-[#e3eae2] bg-white p-5 sm:p-7" aria-labelledby="create-book-title">
+        <div class="mb-6 border-b border-[#e3eae2] pb-5"><p class="text-xs font-bold text-[#d25e43]">کتابخانه</p><h2 id="create-book-title" class="mt-2 text-xl font-bold text-[#18342d]">مشخصات کتاب</h2><p class="mt-2 text-sm text-[#718078]">اطلاعات کتاب و جایگاه آن در دسته‌بندی‌ها را ثبت کن.</p></div>
+        @if ($statusMessage)<p class="mb-5 border-r-[3px] border-[#438266] bg-[#edf7ef] px-4 py-3 text-sm text-[#245a48]" role="status">{{ $statusMessage }}</p>@endif
+        <form wire:submit="save" class="grid gap-4 sm:grid-cols-2">
+            <label class="text-sm font-semibold text-[#35574a]">عنوان کتاب<input id="book-title" wire:model="title" class="mt-2 h-12 w-full rounded border border-[#dce5dd] px-3 font-normal text-[#18342d] outline-none focus:border-[#39836e]" type="text">@error('title')<span class="mt-1 block text-xs text-[#bd493e]">{{ $message }}</span>@enderror</label>
+            <label class="text-sm font-semibold text-[#35574a]">نویسنده<select wire:model="authorId" class="mt-2 h-12 w-full rounded border border-[#dce5dd] bg-white px-3 font-normal text-[#18342d] outline-none focus:border-[#39836e]"><option value="">انتخاب نویسنده</option>@foreach ($authors as $author)<option value="{{ $author->id }}">{{ $author->name }}</option>@endforeach</select>@error('authorId')<span class="mt-1 block text-xs text-[#bd493e]">{{ $message }}</span>@enderror</label>
+            <label class="text-sm font-semibold text-[#35574a]">قیمت (تومان)<input wire:model="price" class="mt-2 h-12 w-full rounded border border-[#dce5dd] px-3 font-normal text-[#18342d] outline-none focus:border-[#39836e]" type="number" min="0" step="1000" dir="ltr">@error('price')<span class="mt-1 block text-xs text-[#bd493e]">{{ $message }}</span>@enderror</label>
+            <label class="text-sm font-semibold text-[#35574a]">موجودی<input wire:model="stock" class="mt-2 h-12 w-full rounded border border-[#dce5dd] px-3 font-normal text-[#18342d] outline-none focus:border-[#39836e]" type="number" min="0" dir="ltr">@error('stock')<span class="mt-1 block text-xs text-[#bd493e]">{{ $message }}</span>@enderror</label>
+            <label class="text-sm font-semibold text-[#35574a]">ناشر<input wire:model="publisher" class="mt-2 h-12 w-full rounded border border-[#dce5dd] px-3 font-normal text-[#18342d] outline-none focus:border-[#39836e]" type="text"></label>
+            <label class="text-sm font-semibold text-[#35574a]">سال انتشار<input wire:model="publicationYear" class="mt-2 h-12 w-full rounded border border-[#dce5dd] px-3 font-normal text-[#18342d] outline-none focus:border-[#39836e]" type="number" min="1000" max="9999" dir="ltr"></label>
+            <label class="text-sm font-semibold text-[#35574a]">تعداد صفحه<input wire:model="pages" class="mt-2 h-12 w-full rounded border border-[#dce5dd] px-3 font-normal text-[#18342d] outline-none focus:border-[#39836e]" type="number" min="1" dir="ltr"></label>
+            <div class="sm:col-span-2">
+                <label for="book-cover-image" class="text-sm font-semibold text-[#35574a]">تصویر جلد کتاب</label>
+                <input id="book-cover-image" wire:model="coverImage" class="mt-2 block w-full cursor-pointer rounded border border-[#dce5dd] bg-[#fbfcfa] text-sm text-[#52665d] file:me-4 file:min-h-12 file:border-0 file:bg-[#e6eddd] file:px-4 file:font-semibold file:text-[#35574a] hover:file:bg-[#dce8cf]" type="file" accept="image/*">
+                <p class="mt-2 text-xs text-[#89958e]">تصویر الزامی، حداکثر ۵ مگابایت</p>
+                @error('coverImage')<span class="mt-1 block text-xs text-[#bd493e]">{{ $message }}</span>@enderror
+                <div wire:loading wire:target="coverImage" class="mt-2 text-xs text-[#718078]">در حال بارگذاری تصویر...</div>
+                @if ($coverImage && $coverImage->isPreviewable())<img src="{{ $coverImage->temporaryUrl() }}" alt="پیش‌نمایش جلد {{ $title }}" class="mt-4 h-48 w-36 rounded border border-[#dce5dd] object-cover">@endif
+            </div>
+            <label class="text-sm font-semibold text-[#35574a] sm:col-span-2">توضیحات<textarea wire:model="description" rows="3" class="mt-2 w-full rounded border border-[#dce5dd] p-3 font-normal text-[#18342d] outline-none focus:border-[#39836e]"></textarea></label>
+            @if ($categories->isNotEmpty())<fieldset class="sm:col-span-2"><legend class="text-sm font-semibold text-[#35574a]">دسته‌بندی‌ها</legend><div class="mt-3 flex flex-wrap gap-3">@foreach ($categories as $category)<label wire:key="category-{{ $category->id }}" class="flex items-center gap-2 text-sm text-[#52665d]"><input wire:model="categoryIds" type="checkbox" value="{{ $category->id }}" class="size-4 accent-[#1d5547]">{{ $category->name }}</label>@endforeach</div>@error('categoryIds')<p class="mt-1 text-xs text-[#bd493e]">{{ $message }}</p>@enderror</fieldset>@endif
+            <button type="submit" wire:loading.attr="disabled" class="min-h-12 rounded bg-[#1d5547] px-5 py-3 text-sm font-bold text-white hover:bg-[#143f35] disabled:opacity-60 sm:col-span-2 sm:justify-self-start">ثبت کتاب</button>
+        </form>
+    </section>
+</x-admin.layout>
