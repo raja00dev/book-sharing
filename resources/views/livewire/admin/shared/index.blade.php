@@ -30,7 +30,7 @@
                         @elseif ($resource === 'banners')
                             <th class="px-4 py-3">بنر</th><th class="px-4 py-3">اندازه</th><th class="px-4 py-3">وضعیت</th>
                         @elseif ($resource === 'orders')
-                            <th class="px-4 py-3">سفارش</th><th class="px-4 py-3">گیرنده</th><th class="px-4 py-3">مبلغ</th><th class="px-4 py-3">وضعیت</th>
+                            <th class="px-4 py-3">سفارش</th><th class="px-4 py-3">گیرنده</th><th class="px-4 py-3">مبلغ</th><th class="px-4 py-3">وضعیت سفارش</th>
                         @else
                             <th class="px-4 py-3">نام</th><th class="px-4 py-3">شماره موبایل</th><th class="px-4 py-3">دسترسی</th>
                         @endif
@@ -50,7 +50,7 @@
                             @elseif ($resource === 'banners')
                                 <td class="px-4 py-3"><div class="flex items-center gap-3">@if (str_starts_with($item->image, 'http'))<img src="{{ $item->image }}" alt="" class="size-12 rounded border border-[#e1e8e0] object-cover">@elseif (str_starts_with($item->image, '/'))<img src="{{ $item->image }}" alt="" class="size-12 rounded border border-[#e1e8e0] object-cover">@else<img src="{{ asset('storage/'.$item->image) }}" alt="" class="size-12 rounded border border-[#e1e8e0] object-cover">@endif<span class="font-semibold">{{ $item->text ?: 'بدون عنوان' }}</span></div></td><td class="px-4 py-3">{{ $item->isBig ? 'بزرگ' : 'معمولی' }}</td><td class="px-4 py-3"><span class="rounded px-2 py-1 text-xs {{ $item->status ? 'bg-[#edf7ef] text-[#245a48]' : 'bg-[#f4efeb] text-[#8a5644]' }}">{{ $item->status ? 'فعال' : 'غیرفعال' }}</span></td>
                             @elseif ($resource === 'orders')
-                                <td class="px-4 py-3 font-semibold">#{{ $item->id }}</td><td class="px-4 py-3">{{ $item->recipient_name }}<span class="mt-1 block text-xs text-[#89958e]" dir="ltr">{{ $item->phone }}</span></td><td class="whitespace-nowrap px-4 py-3">{{ number_format((float) $item->total_price) }} تومان</td><td class="px-4 py-3">{{ __('admin.orders.'.$item->status) }}</td>
+                                <td class="px-4 py-3 font-semibold">#{{ $item->id }}</td><td class="px-4 py-3">{{ $item->recipient_name }}<span class="mt-1 block text-xs text-[#89958e]" dir="ltr">{{ $item->phone }}</span></td><td class="whitespace-nowrap px-4 py-3">{{ number_format((float) $item->total_price) }} تومان</td><td class="px-4 py-3">{{ $item->statusLabel() }}</td>
                             @else
                                 <td class="px-4 py-3 font-semibold">{{ $item->name ?: '—' }}</td><td class="px-4 py-3" dir="ltr">{{ $item->phone }}</td><td class="px-4 py-3">{{ $item->is_admin ? 'ادمین' : 'کاربر' }}</td>
                             @endif

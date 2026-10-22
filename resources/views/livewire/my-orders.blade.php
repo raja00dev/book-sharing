@@ -2,14 +2,19 @@
     <header class="mb-7 flex flex-wrap items-end justify-between gap-4">
         <div>
             <p class="text-xs font-bold text-[#d25e43]">حساب کاربری</p>
-            <h1 class="mt-2 text-2xl font-bold text-[#18342d] sm:text-3xl">سفارش‌های من</h1>
-            <p class="mt-2 text-sm text-[#718078]">وضعیت سفارش‌ها و اقلام ثبت ‌شده</p>
+            <h1 class="mt-2 text-2xl font-bold text-[#18342d] sm:text-3xl">سفارش‌ های من</h1>
+            <p class="mt-2 text-sm text-[#718078]">وضعیت سفارش‌ ها و اقلام ثبت ‌شده</p>
         </div>
         <a href="{{ route('profile') }}" aria-label="بازگشت به پروفایل" title="بازگشت به پروفایل" class="inline-flex min-h-10 items-center gap-2 rounded border border-[#dce5dd] px-3 py-2 text-sm font-semibold text-[#1d5547] transition hover:border-[#1d5547]">
             <x-icon name="back" />
             <span class="sr-only sm:not-sr-only sm:inline">بازگشت به پروفایل</span>
         </a>
     </header>
+
+       @if (session('orderErrorStatus'))
+        <p class="mb-5 rounded border border-red-400 bg-red-300 px-4 py-3 text-sm font-semibold text-red-800 role="status">{{ session('orderErrorStatus') }}</p>
+    @endif
+
 
     @if (session('orderStatus'))
         <p class="mb-5 rounded border border-[#b8d3c0] bg-[#edf7ef] px-4 py-3 text-sm font-semibold text-[#245a48]" role="status">{{ session('orderStatus') }}</p>
@@ -25,7 +30,13 @@
                             <p class="mt-1 text-xs text-[#718078]">{{ \App\Support\PersianDate::format($order->created_at, 'yyyy/MM/dd HH:mm') }}</p>
                         </div>
                         <div class="flex items-center gap-2">
-                            <span class="rounded px-2.5 py-1 text-xs font-semibold {{ $order->status === 'delivered' ? 'bg-[#edf7ef] text-[#245a48]' : 'bg-[#edf2ea] text-[#52665d]' }}">{{ __('admin.orders.'.$order->status) }}</span>
+                            <span class="rounded px-2.5 py-1 text-xs font-semibold {{ in_array($order->status, ['paid', 'processing', 'shipped', 'delivered'], true) ? 'bg-[#edf7ef] text-[#245a48]' : 'bg-[#edf2ea] text-[#52665d]' }}">{{ $order->statusLabel() }}</span>
+                            @if ($order->status === 'pending')
+                                <form method="POST" action="{{ route('orders.pay', $order->id) }}">
+                                    @csrf
+                                    <button type="submit" class="inline-flex min-h-9 items-center justify-center rounded bg-[#1d5547] px-3 text-xs font-bold text-white transition hover:bg-[#133f36]">پرداخت</button>
+                                </form>
+                            @endif
                             @if ($order->status === 'pending')
                                 <button type="button" wire:click="delete({{ $order->id }})" wire:confirm="از حذف این سفارش مطمئنی؟ موجودی کتاب‌ها به قفسه بازمی‌گردد." wire:loading.attr="disabled" wire:target="delete({{ $order->id }})" class="inline-flex min-h-9 items-center justify-center rounded border border-[#ead9d4] px-3 text-xs font-bold text-[#a34031] transition hover:bg-[#fff0ed] disabled:opacity-50">حذف سفارش</button>
                             @endif
@@ -38,9 +49,9 @@
                                 <li wire:key="order-{{ $order->id }}-item-{{ $item->id }}" class="flex flex-wrap items-center justify-between gap-2 py-3 first:pt-0 last:pb-0">
                                     <div>
                                         <p class="text-sm font-semibold text-[#35574a]">{{ $item->book?->title ?? 'کتاب حذف‌شده' }}</p>
-                                        <p class="mt-1 text-xs text-[#718078]">{{ number_format($item->quantity) }} نسخه × {{ number_format((float) ($item->unit_price ?? $item->book?->price ?? 0)) }} تومان</p>
+                                        <p class="mt-1 text-xs text-[#718078]">{{ number_format((int) ($item->price ?? $item->book?->price ?? 0)) }} تومان</p>
                                     </div>
-                                    <p class="text-sm font-bold text-[#1d5547]">{{ number_format((float) ($item->unit_price ?? $item->book?->price ?? 0) * $item->quantity) }} تومان</p>
+                                    <p class="text-sm font-bold text-[#1d5547]">{{ number_format((int) ($item->price ?? $item->book?->price ?? 0)) }} تومان</p>
                                 </li>
                             @endforeach
                         </ul>

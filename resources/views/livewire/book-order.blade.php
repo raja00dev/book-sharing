@@ -16,12 +16,7 @@
             <form method="POST" action="{{ route('orders.checkout') }}" class="mt-7 grid gap-5 sm:grid-cols-2">
                 @csrf
                 <input type="hidden" name="book_id" value="{{ $book->id }}">
-
-                <label for="purchase-quantity" class="text-sm font-semibold text-[#35574a]">تعداد
-                    <input id="purchase-quantity" name="quantity" type="number" min="1" max="{{ $book->stock }}" value="{{ old('quantity', 1) }}" required class="mt-2 h-12 w-full rounded border border-[#dce5dd] px-3 text-[#18342d] outline-none focus:border-[#39836e]" dir="ltr">
-                    @error('quantity')<span class="mt-1 block text-xs text-[#bd493e]">{{ $message }}</span>@enderror
-                    @error('book_id')<span class="mt-1 block text-xs text-[#bd493e]">{{ $message }}</span>@enderror
-                </label>
+                @error('book_id')<span class="text-xs text-[#bd493e] sm:col-span-2">{{ $message }}</span>@enderror
 
                 <label for="recipient-name" class="text-sm font-semibold text-[#35574a]">نام گیرنده
                     <input id="recipient-name" name="recipient_name" type="text" value="{{ old('recipient_name', auth()->user()->name) }}" required maxlength="255" class="mt-2 h-12 w-full rounded border border-[#dce5dd] px-3 text-[#18342d] outline-none focus:border-[#39836e]">
@@ -56,10 +51,10 @@
                 </div>
             </div>
             <dl class="mt-5 space-y-3 border-t border-[#dfe7e1] pt-4 text-sm">
-                <div class="flex justify-between gap-3"><dt class="text-[#718078]">قیمت هر نسخه</dt><dd class="font-semibold text-[#35574a]">{{ number_format((float) $book->price) }} تومان</dd></div>
+                <div class="flex justify-between gap-3"><dt class="text-[#718078]">قیمت</dt><dd class="font-semibold text-[#35574a]">{{ number_format((float) $book->price) }} تومان</dd></div>
                 <div class="flex justify-between gap-3"><dt class="text-[#718078]">موجودی</dt><dd class="font-semibold text-[#35574a]">{{ number_format($book->stock) }} نسخه</dd></div>
             </dl>
-            <p class="mt-4 text-xs leading-6 text-[#718078]">مبلغ نهایی بر اساس تعداد انتخابی محاسبه می‌شود. موجودی پس از ثبت سفارش برای شما نگه داشته می‌شود.</p>
+            <p class="mt-4 text-xs leading-6 text-[#718078]">در هر سفارش یک نسخه از این کتاب ثبت می‌شود. موجودی پس از ثبت سفارش برای شما نگه داشته می‌شود.</p>
         </aside>
     </div>
 </main>

@@ -31,7 +31,7 @@ class MyOrders extends Component
                 Book::query()
                     ->lockForUpdate()
                     ->findOrFail($item->book_id)
-                    ->increment('stock', $item->quantity);
+                    ->increment('stock');
             }
 
             $order->delete();

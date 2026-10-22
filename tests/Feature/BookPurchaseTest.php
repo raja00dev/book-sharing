@@ -1,10 +1,12 @@
 <?php
 
+use App\Livewire\Admin\Orders\Edit as EditOrder;
 use App\Livewire\MyOrders;
 use App\Models\Author;
 use App\Models\Book;
 use App\Models\Order;
 use App\Models\User;
+use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
 
 test('an authenticated user can submit a book order without a payment integration', function () {
@@ -33,11 +35,11 @@ test('an authenticated user can submit a book order without a payment integratio
         ->assertSee('shipping-address', false)
         ->assertSee('ثبت سفارش')
         ->assertSee('موجودی پس از ثبت سفارش برای شما نگه داشته می‌شود.')
+        ->assertDontSee('purchase-quantity')
         ->assertDontSee('پرداخت');
 
     $this->post(route('orders.checkout'), [
         'book_id' => $book->id,
-        'quantity' => 2,
         'recipient_name' => 'خریدار',
         'phone' => '09120000001',
         'shipping_address' => 'تهران، خیابان نمونه',
@@ -45,12 +47,17 @@ test('an authenticated user can submit a book order without a payment integratio
         ->assertRedirect(route('orders.mine'));
 
     $order = Order::query()->firstOrFail();
-    expect((float) $order->total_price)->toBe(250000.0)
+    expect((float) $order->total_price)->toBe(125000.0)
         ->and($order->status)->toBe('pending')
-        ->and($order->items->first()->quantity)->toBe(2)
-        ->and((float) $order->items->first()->unit_price)->toBe(125000.0);
+        ->and(Schema::hasColumn('orders', 'payment_token'))->toBeTrue()
+        ->and(Schema::hasColumn('orders', 'is_paid'))->toBeFalse()
+        ->and(Schema::hasColumn('orders', 'shipping_status'))->toBeFalse()
+        ->and((int) $order->items->first()->book->price)->toBe(125000)
+        ->and(array_key_exists('quantity', $order->items->first()->getAttributes()))->toBeFalse()
+        ->and(Schema::hasColumn('order_items', 'quantity'))->toBeFalse()
+        ->and(Schema::hasColumn('order_items', 'price'))->toBeFalse();
 
-    $this->assertDatabaseHas('books', ['id' => $book->id, 'stock' => 1]);
+    $this->assertDatabaseHas('books', ['id' => $book->id, 'stock' => 2]);
 
 });
 
@@ -74,13 +81,13 @@ test('a user sees only their own orders and payment details', function () {
     ]);
 
     $ownOrder = $user->orders()->create([
-        'total_price' => 80000,
-        'status' => 'processing',
+        'total_price' => 40000,
+        'status' => 'pending',
         'recipient_name' => 'گیرنده‌ی من',
         'phone' => $user->phone,
         'shipping_address' => 'نشانی من',
     ]);
-    $ownOrder->items()->create(['book_id' => $ownBook->id, 'quantity' => 2, 'unit_price' => 40000]);
+    $ownOrder->items()->create(['book_id' => $ownBook->id]);
 
     $otherOrder = $otherUser->orders()->create([
         'total_price' => 70000,
@@ -89,19 +96,132 @@ test('a user sees only their own orders and payment details', function () {
         'phone' => $otherUser->phone,
         'shipping_address' => 'نشانی دیگر',
     ]);
-    $otherOrder->items()->create(['book_id' => $otherBook->id, 'quantity' => 1, 'unit_price' => 70000]);
+    $otherOrder->items()->create(['book_id' => $otherBook->id]);
 
     $this->actingAs($user)
         ->get(route('orders.mine'))
         ->assertOk()
         ->assertSee('سفارش‌های من')
         ->assertSee('کتاب سفارش من')
-        ->assertSee('در حال آماده‌سازی')
-        ->assertDontSee('پرداخت')
+        ->assertSee('در انتظار پرداخت')
+        ->assertSee('پرداخت')
+        ->assertSee(route('orders.pay', $ownOrder), false)
+        ->assertSee('name="_token"', false)
         ->assertSee('بازگشت به پروفایل')
         ->assertSee(route('profile'), false)
         ->assertDontSee('کتاب سفارش دیگران')
         ->assertDontSee('نشانی دیگر');
+});
+
+test('an authenticated user can pay for their pending order in test mode', function () {
+    $user = User::factory()->create(['phone' => '09120000008']);
+    $order = $user->orders()->create([
+        'total_price' => 125000,
+        'status' => 'pending',
+        'recipient_name' => 'خریدار',
+        'phone' => $user->phone,
+        'shipping_address' => 'نشانی نمونه',
+    ]);
+
+    $this->actingAs($user)
+        ->post(route('orders.pay', $order))
+        ->assertOk()
+        ->assertSee('درگاه پرداخت تست');
+
+    $order->refresh();
+    expect($order->payment_token)->not->toBeNull()
+        ->and($order->status)->toBe('pending');
+
+    $this->post(route('payment.verify'), ['transactionId' => $order->payment_token])
+        ->assertRedirect(route('orders.mine'))
+        ->assertSessionHas('orderStatus', 'پرداخت با موفقیت انجام شد.');
+
+    $this->assertDatabaseHas('orders', [
+        'id' => $order->id,
+        'status' => 'paid',
+    ]);
+});
+
+test('a user cannot pay for an order that is already paid', function () {
+    $user = User::factory()->create(['phone' => '09120000009']);
+    $order = $user->orders()->create([
+        'total_price' => 125000,
+        'status' => 'paid',
+        'recipient_name' => 'خریدار',
+        'phone' => $user->phone,
+        'shipping_address' => 'نشانی نمونه',
+    ]);
+
+    $this->actingAs($user)
+        ->post(route('orders.pay', $order))
+        ->assertRedirect(route('orders.mine'))
+        ->assertSessionHas('orderErrorStatus', 'این سفارش در وضعیت فعلی قابل پرداخت نیست.');
+});
+
+test('a cancelled payment leaves the order pending', function () {
+    $user = User::factory()->create(['phone' => '09120000012']);
+    $order = $user->orders()->create([
+        'total_price' => 125000,
+        'payment_token' => 'test-payment-token',
+        'status' => 'pending',
+        'recipient_name' => 'خریدار',
+        'phone' => $user->phone,
+        'shipping_address' => 'نشانی نمونه',
+    ]);
+
+    $this->actingAs($user)
+        ->post(route('payment.verify'), [
+            'transactionId' => $order->payment_token,
+            'cancel' => 'true',
+        ])
+        ->assertRedirect(route('orders.mine'))
+        ->assertSessionHas('orderErrorStatus', 'پرداخت توسط شما لغو شد.');
+
+    $this->assertDatabaseHas('orders', [
+        'id' => $order->id,
+        'status' => 'pending',
+    ]);
+});
+
+test('an admin can update order status', function () {
+    $admin = User::factory()->create([
+        'phone' => '09120000013',
+        'is_admin' => true,
+    ]);
+    $order = $admin->orders()->create([
+        'total_price' => 125000,
+        'status' => 'pending',
+        'recipient_name' => 'خریدار',
+        'phone' => $admin->phone,
+        'shipping_address' => 'نشانی نمونه',
+    ]);
+
+    Livewire::actingAs($admin)
+        ->test(EditOrder::class, ['id' => $order->id])
+        ->set('statusValue', 'shipped')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $this->assertDatabaseHas('orders', [
+        'id' => $order->id,
+        'status' => 'shipped',
+    ]);
+});
+
+test('a user cannot start payment for another users order', function () {
+    $user = User::factory()->create(['phone' => '09120000010']);
+    $otherUser = User::factory()->create(['phone' => '09120000011']);
+    $order = $otherUser->orders()->create([
+        'total_price' => 125000,
+        'status' => 'pending',
+        'recipient_name' => 'خریدار',
+        'phone' => $user->phone,
+        'shipping_address' => 'نشانی نمونه',
+    ]);
+
+    $this->actingAs($user)
+        ->post(route('orders.pay', $order))
+        ->assertNotFound();
 });
 
 test('a user can delete their pending order and restore book stock', function () {
@@ -115,13 +235,13 @@ test('a user can delete their pending order and restore book stock', function ()
         'is_active' => true,
     ]);
     $order = $user->orders()->create([
-        'total_price' => 100000,
+        'total_price' => 50000,
         'status' => 'pending',
         'recipient_name' => 'خریدار',
         'phone' => $user->phone,
         'shipping_address' => 'نشانی نمونه',
     ]);
-    $order->items()->create(['book_id' => $book->id, 'quantity' => 2, 'unit_price' => 50000]);
+    $order->items()->create(['book_id' => $book->id]);
 
     Livewire::actingAs($user)
         ->test(MyOrders::class)
@@ -130,7 +250,7 @@ test('a user can delete their pending order and restore book stock', function ()
         ->assertSee('سفارش حذف شد');
 
     $this->assertDatabaseMissing('orders', ['id' => $order->id]);
-    $this->assertDatabaseHas('books', ['id' => $book->id, 'stock' => 2]);
+    $this->assertDatabaseHas('books', ['id' => $book->id, 'stock' => 1]);
 });
 
 test('a user cannot delete an order that is not pending', function () {

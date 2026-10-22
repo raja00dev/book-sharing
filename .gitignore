@@ -5,6 +5,8 @@
 /public/hot
 /public/storage
 /storage/*.key
+/tests
+/.github
 /storage/pail
 /vendor
 .env

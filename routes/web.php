@@ -42,7 +42,10 @@ Route::get('/my-orders', MyOrders::class)->middleware('auth')->name('orders.mine
 Route::get('/book-search', BookCatalog::class)->middleware('auth')->name('books.catalog');
 Route::get('/books/{book}', BookDetail::class)->middleware('auth')->name('books.show');
 Route::get('/books/{book}/order', BookOrder::class)->middleware('auth')->name('books.order');
+
 Route::post('/orders/checkout', [OrderController::class, 'checkout'])->middleware('auth')->name('orders.checkout');
+Route::post('/my-orders/{order}/pay', [OrderController::class, 'pay'])->middleware('auth')->name('orders.pay');
+Route::post('payment/callback', [OrderController::class, 'callback'])->name('payment.verify');
 
 Route::get('/login', PhoneLogin::class)->name('login');
 

@@ -18,7 +18,7 @@ return new class extends Migration
                 ->constrained()
                 ->restrictOnDelete();
 
-            $table->decimal('total_price', 12, 2);
+            $table->bigInteger('total_price');
 
             $table->enum('status', [
                 'pending',
@@ -28,6 +28,8 @@ return new class extends Migration
                 'delivered',
                 'cancelled',
             ])->default('pending');
+
+            $table->string('payment_token', 80)->nullable();
 
             $table->string('recipient_name');
 

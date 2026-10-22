@@ -10,15 +10,13 @@ class OrderItem extends Model
     protected $fillable = [
         'order_id',
         'book_id',
-        'quantity',
-        'unit_price',
+        'price',
     ];
 
     protected function casts(): array
     {
         return [
-            'quantity' => 'integer',
-            'unit_price' => 'decimal:2',
+            'price' => 'integer',
         ];
     }
 

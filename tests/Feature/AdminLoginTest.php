@@ -503,7 +503,7 @@ test('admin resource list pages show their records and support search', function
         ->assertOk()
         ->assertSee('فهرست سفارش‌ها')
         ->assertSee('گیرنده‌ی فهرست')
-        ->assertSee('در انتظار بررسی');
+        ->assertSee('در انتظار پرداخت');
 
     $this->get(route('admin.books.edit', ['id' => $book->id]))->assertOk();
     $this->get(route('admin.authors.edit', ['id' => $author->id]))->assertOk();

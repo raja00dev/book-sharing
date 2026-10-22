@@ -12,19 +12,23 @@ class Order extends Model
         'user_id',
         'total_price',
         'status',
-        'payment_status',
-        'payment_authority',
-        'payment_reference',
+        'payment_token',
         'recipient_name',
         'phone',
         'shipping_address',
     ];
 
-    protected function casts(): array
+    public function statusLabel(): string
     {
-        return [
-            'total_price' => 'decimal:2',
-        ];
+        return match ($this->status) {
+            'pending' => 'در انتظار پرداخت',
+            'paid' => 'پرداخت‌شده',
+            'processing' => 'در حال آماده‌سازی',
+            'shipped' => 'ارسال‌شده',
+            'delivered' => 'تحویل‌شده',
+            'cancelled' => 'لغوشده',
+            default => $this->status,
+        };
     }
 
     public function user(): BelongsTo
