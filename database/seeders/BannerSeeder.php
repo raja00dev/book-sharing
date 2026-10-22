@@ -36,7 +36,7 @@ class BannerSeeder extends Seeder
         ];
 
         foreach ($banners as $banner) {
-            Banner::query()->firstOrCreate(
+            $record = Banner::query()->firstOrCreate(
                 ['text' => $banner['text']],
                 [
                     'image' => $banner['image'],
@@ -44,6 +44,10 @@ class BannerSeeder extends Seeder
                     'status' => true,
                 ],
             );
+
+            if (! $record->status) {
+                $record->update(['status' => true]);
+            }
         }
     }
 }
